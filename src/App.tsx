@@ -10,6 +10,8 @@ import { AnnualPage } from './pages/AnnualPage';
 import { getItems } from './api/client';
 import type { Item } from './types';
 
+// pull request練習用のコメント
+
 import './index.css'; // App固有のCSSがあれば
 
 type PageType = 'home' | 'monthly' | 'annual';
