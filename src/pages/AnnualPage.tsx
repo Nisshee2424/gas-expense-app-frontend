@@ -141,7 +141,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					view="year"
 					dateFormat="yy"
 					showIcon
-					inputStyle={{ color: '#333', width: '100px' }}
+					inputStyle={{ color: '#333', width: '4.5em' }}
 				/>
 				<Button
 					icon="pi pi-refresh"
@@ -154,7 +154,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					className="p-button-text"
 				/>
 				<Button
-					label="保存"
+					label=""
 					icon="pi pi-save"
 					onClick={handleSave}
 					disabled={Object.keys(editedBudgets).length === 0 || isSaving}

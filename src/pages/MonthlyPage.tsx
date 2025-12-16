@@ -192,7 +192,7 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 			<div className="col-12">
 				<div className="flex align-items-center gap-3 mb-4">
 					<label>対象月:</label>
-					<Calendar value={date} onChange={(e) => setDate(e.value as Date)} view="month" dateFormat="yy/mm" showIcon inputStyle={{ color: '#333' }} />
+					<Calendar value={date} onChange={(e) => setDate(e.value as Date)} view="month" dateFormat="yy/mm" showIcon inputStyle={{ color: '#333', width: '6em' }} />
 					<Button icon="pi pi-refresh" rounded text onClick={fetchMonthly} tooltip="再読み込み" />
 				</div>
 			</div>
