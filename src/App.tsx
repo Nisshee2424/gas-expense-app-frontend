@@ -10,6 +10,7 @@ import { AnnualPage } from './pages/AnnualPage';
 import { items } from './constants/items';
 
 // pull request練習用のコメント
+// 適当なコメント２
 
 import './index.css'; // App固有のCSSがあれば
 
