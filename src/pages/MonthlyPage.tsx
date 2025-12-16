@@ -228,6 +228,8 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 									className="w-full"
 									useGrouping={true}
 									inputStyle={{ maxWidth: '120px' }}
+									inputMode="decimal"
+									pattern="[0-9]*"
 								/>
 							)}
 						/>
@@ -306,6 +308,8 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 						placeholder="金額"
 						className="w-full"
 						useGrouping={true}
+						inputMode="decimal"
+						pattern="[0-9]*"
 					/>
 				</div>
 

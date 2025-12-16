@@ -102,6 +102,8 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				maxFractionDigits={0}
 				useGrouping={false}
 				inputStyle={{ width: '100px', textAlign: 'left' }}
+				inputMode="decimal"
+				pattern="[0-9]*"
 			/>
 		);
 	};

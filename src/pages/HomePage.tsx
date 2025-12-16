@@ -215,6 +215,8 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 									placeholder="金額"
 									className="w-full"
 									useGrouping={true}
+									inputMode="decimal"
+									pattern="[0-9]*"
 								/>
 							</div>
 						))}
@@ -306,6 +308,8 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 						placeholder="金額"
 						className="w-full"
 						useGrouping={true}
+						inputMode="decimal"
+						pattern="[0-9]*"
 					/>
 				</div>
 

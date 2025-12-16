@@ -57,7 +57,7 @@ function App() {
     localStorage.removeItem('auth_token');
   };
 
-  // 未ログイン時
+  // 未ログイン時 適当なコメント 適当なコメント
   if (!user) {
     return (
       <div className="flex flex-column align-items-center justify-content-center h-screen surface-ground p-3">
