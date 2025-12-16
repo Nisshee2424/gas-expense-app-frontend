@@ -34,7 +34,7 @@ interface CategorySummary {
 }
 
 export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
-	const [date, setDate] = useState<Date>(new Date());
+	const [date] = useState<Date>(new Date());
 	const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
 	const [loading, setLoading] = useState(false);
 
