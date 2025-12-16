@@ -15,15 +15,16 @@ import { Row } from 'primereact/row';
 import { getMonthlyTransactions, updateTransaction, deleteTransaction } from '../api/client';
 import type { Transaction } from '../types';
 import { items } from '../constants/items';
+import { showSimpleNotification, showLoadingNotification } from '../utils/notifications';
 
 // 曜日を日本語で返すヘルパー関数
 const getDayLabel = (date: Date) => {
-  const days = ['日', '月', '火', '水', '木', '金', '土'];
-  return days[date.getDay()];
+	const days = ['日', '月', '火', '水', '木', '金', '土'];
+	return days[date.getDay()];
 };
 
 interface MonthlyPageProps {
-  token: string;
+	token: string;
 }
 
 interface CategorySummary {
@@ -44,6 +45,11 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 	const [editItemId, setEditItemId] = useState<number | null>(null);
 	const [editNote, setEditNote] = useState<string>('');
 	const [editAmount, setEditAmount] = useState<number>(0);
+	const [isFixedCost, setIsFixedCost] = useState(false);
+
+	const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+	const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+	const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
 	const toast = useRef<Toast>(null);
 	const hasFetched = useRef(false);
@@ -55,12 +61,18 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 		}
 	}, [token, date]);
 
-	const fetchMonthly = async () => {
+	useEffect(() => {
+		setSelectedYear(selectedDate.getFullYear());
+		setSelectedMonth(selectedDate.getMonth() + 1);
+		fetchMonthly(selectedDate.getFullYear(), selectedDate.getMonth() + 1);
+	}, [selectedDate]);
+
+	const fetchMonthly = async (year?: number, month?: number) => {
 		setLoading(true);
 		try {
-			const year = date.getFullYear();
-			const month = date.getMonth() + 1;
-			const data = await getMonthlyTransactions(year, month);
+			const targetYear = year || selectedYear;
+			const targetMonth = month || selectedMonth;
+			const data = await getMonthlyTransactions(targetYear, targetMonth);
 			setAllTransactions(data || []);
 		} catch (e) {
 			console.error(e);
@@ -95,21 +107,15 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 	const totalAll = allTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
 	const totalFixed = fixedCosts.reduce((sum, t) => sum + Number(t.amount), 0);
 
-	// 固定費の金額編集
-	const handleFixedCostChange = async (tx: Transaction, newAmount: number) => {
-		try {
-			await updateTransaction(tx.id, {
-				year: tx.year,
-				month: tx.month,
-				day: tx.day,
-				item_id: tx.item_id,
-				amount: newAmount
-			});
-			toast.current?.show({ severity: 'success', summary: '更新', detail: '固定費を更新しました', life: 1000 });
-			fetchMonthly();
-		} catch (e: any) {
-			toast.current?.show({ severity: 'error', summary: 'エラー', detail: e.message });
-		}
+	// 固定費の金額をクリックしたときのハンドラー
+	const handleFixedCostClick = (tx: Transaction) => {
+		setEditingTransaction(tx);
+		setEditDate(new Date(tx.year, tx.month - 1, 1)); // 固定費は1日をデフォルトに
+		setEditItemId(tx.item_id);
+		setEditNote(tx.note || '');
+		setEditAmount(Number(tx.amount));
+		setIsFixedCost(true);
+		setEditDialogVisible(true);
 	};
 
 	// 編集モーダルを開く
@@ -119,13 +125,21 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 		setEditItemId(tx.item_id);
 		setEditNote(tx.note || '');
 		setEditAmount(Number(tx.amount));
+		setIsFixedCost(false);
 		setEditDialogVisible(true);
+	};
+
+	// 通知を表示
+	const showNotification = (message: string, type?: 'success' | 'error' | 'info' | 'warn') => {
+		showSimpleNotification({ message, type });
 	};
 
 	// 更新処理
 	const handleUpdate = async () => {
 		if (!editingTransaction || !editItemId) return;
 		setEditDialogVisible(false);
+		setLoading(true);
+		const loadingNotification = showLoadingNotification('更新中...');
 		try {
 			await updateTransaction(editingTransaction.id, {
 				year: editDate.getFullYear(),
@@ -135,28 +149,40 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 				note: editNote,
 				amount: editAmount
 			});
-			toast.current?.show({ severity: 'success', summary: '更新完了', detail: 'データを更新しました' });
-			fetchMonthly();
+			loadingNotification.close();
+			showNotification('更新しました！', 'success');
+			await fetchMonthly();
 		} catch (e: any) {
-			toast.current?.show({ severity: 'error', summary: 'エラー', detail: e.message });
+			loadingNotification.close();
+			showNotification(e.message, 'error');
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	// 削除処理
 	const handleDelete = () => {
 		if (!editingTransaction) return;
+		// 削除前にモーダルを閉じる
+		setEditDialogVisible(false);
 		confirmDialog({
 			message: '本当に削除しますか？',
 			header: '削除確認',
 			icon: 'pi pi-exclamation-triangle',
+			acceptClassName: 'p-button-danger',
 			accept: async () => {
+				setLoading(true);
+				const loadingNotification = showLoadingNotification('削除中...');
 				try {
 					await deleteTransaction(editingTransaction.id);
-					toast.current?.show({ severity: 'success', summary: '削除完了', detail: '削除しました' });
-					setEditDialogVisible(false);
-					fetchMonthly();
+					loadingNotification.close();
+					showNotification('削除しました！', 'success');
+					await fetchMonthly();
 				} catch (e: any) {
-					toast.current?.show({ severity: 'error', summary: 'エラー', detail: e.message });
+					loadingNotification.close();
+					showNotification(`エラー: ${e.message}`, 'error');
+				} finally {
+					setLoading(false);
 				}
 			}
 		});
@@ -182,7 +208,6 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 	);
 
 
-
 	return (
 		<div className="grid">
 			<Toast ref={toast} />
@@ -192,8 +217,27 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 			<div className="col-12">
 				<div className="flex align-items-center gap-3 mb-4">
 					<label>対象月:</label>
-					<Calendar value={date} onChange={(e) => setDate(e.value as Date)} view="month" dateFormat="yy/mm" showIcon inputStyle={{ color: '#333', width: '6em' }} />
-					<Button icon="pi pi-refresh" rounded text onClick={fetchMonthly} tooltip="再読み込み" />
+					<Calendar
+						value={selectedDate}
+						onChange={(e) => setSelectedDate(e.value as Date)}
+						view="month"
+						dateFormat="yy/mm"
+						showIcon
+						yearNavigator
+						yearRange="2020:2030"
+						monthNavigator
+						showButtonBar
+						className="mr-2"
+						style={{ width: '9em' }}
+					/>
+					<Button
+						icon="pi pi-refresh"
+						rounded
+						text
+						onClick={() => fetchMonthly(selectedDate.getFullYear(), selectedDate.getMonth() + 1)}
+						tooltip="再読み込み"
+						disabled={loading}
+					/>
 				</div>
 			</div>
 
@@ -210,29 +254,28 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 			{/* 固定費 */}
 			<div className="col-12 md:col-6">
 				<Card title="固定費">
-					<DataTable value={fixedCosts} loading={loading} footerColumnGroup={fixedFooter} size="small" stripedRows emptyMessage="固定費データがありません">
+					<DataTable
+						value={fixedCosts}
+						loading={loading}
+						footerColumnGroup={fixedFooter}
+						size="small"
+						stripedRows
+						emptyMessage="固定費データがありません"
+						selectionMode="single"
+						onRowClick={(e) => {
+							const transaction = e.data as Transaction;
+							if (transaction) {
+								handleFixedCostClick(transaction);
+							}
+						}}
+						rowClassName={() => "cursor-pointer hover:surface-100"}
+					>
 						<Column field="item_id" header="費目" body={(row) => getItemName(row.item_id)} />
 						<Column field="note" header="品目" body={(row) => row.note || '-'} />
 						<Column
 							field="amount"
 							header="金額"
-							body={(row) => (
-								<InputText
-									value={row.amount ? row.amount.toString() : ''}
-									onChange={(e) => {
-										const value = e.target.value;
-										// 数字のみ許可（空文字列は許可）
-										if (value === '' || /^[0-9]+$/.test(value)) {
-											handleFixedCostChange(row, value === '' ? 0 : parseInt(value, 10));
-										}
-									}}
-									className="w-full"
-									style={{ maxWidth: '120px' }}
-									type="text"
-									inputMode="numeric"
-									pattern="[0-9]*"
-								/>
-							)}
+							body={(row) => `¥${Number(row.amount).toLocaleString()}`}
 						/>
 					</DataTable>
 				</Card>
@@ -268,38 +311,29 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 
 			{/* 編集モーダル */}
 			<Dialog
-				header="明細編集"
+				header={isFixedCost ? "固定費を編集" : "明細を編集"}
 				visible={editDialogVisible}
 				onHide={() => setEditDialogVisible(false)}
 				style={{ width: '90vw', maxWidth: '500px' }}
+				dismissableMask={true}
+				modal
+				draggable={false}
 			>
-				<div className="field">
-					<label className="block mb-2">日付</label>
-					<Calendar value={editDate} onChange={(e) => setEditDate(e.value as Date)} showIcon dateFormat="yy/mm/dd" className="w-full" />
-				</div>
+				{/* /調整 */}
+				<div style={{ paddingTop: '1rem' }}></div>
 
-				<div className="field">
-					<label>費目</label>
-					<Dropdown
-						value={editItemId}
-						options={items}
-						optionLabel="name"
-						optionValue="id"
-						onChange={(e) => setEditItemId(e.value)}
-						placeholder="費目を選択"
-						className="w-full"
-					/>
-				</div>
-
-				<div className="field">
-					<label>品目</label>
-					<InputText
-						value={editNote}
-						onChange={(e) => setEditNote(e.target.value)}
-						placeholder="品目を入力（任意）"
-						className="w-full"
-					/>
-				</div>
+				{!isFixedCost && (
+					<div className="field">
+						<label>日付</label>
+						<Calendar
+							value={editDate}
+							onChange={(e) => setEditDate(e.value as Date)}
+							dateFormat="yy/mm/dd"
+							showIcon
+							className="w-full"
+						/>
+					</div>
+				)}
 
 				<div className="field">
 					<label>金額</label>
@@ -320,9 +354,50 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 					/>
 				</div>
 
+				<div className="field">
+					<label>費目</label>
+					<Dropdown
+						value={editItemId}
+						options={items}
+						optionLabel="name"
+						optionValue="id"
+						onChange={(e) => setEditItemId(e.value)}
+						placeholder="費目を選択"
+						className="w-full"
+					// disabled={isFixedCost}
+					/>
+				</div>
+
+				<div className="field">
+					<label>品目</label>
+					<InputText
+						value={editNote}
+						onChange={(e) => setEditNote(e.target.value)}
+						placeholder="品目を入力（任意）"
+						className="w-full"
+					// disabled={isFixedCost}
+					/>
+				</div>
+
 				<div className="flex justify-content-between mt-4">
-					<Button label="削除" icon="pi pi-trash" severity="danger" onClick={handleDelete} />
-					<Button label="更新" icon="pi pi-check" severity="warning" onClick={handleUpdate} />
+					{editingTransaction && (
+						<Button
+							label="削除"
+							icon="pi pi-trash"
+							severity="danger"
+							onClick={handleDelete}
+							className="p-button-danger"
+							style={{ width: 'unset' }}
+						/>
+					)}
+					<Button
+						label="更新"
+						icon="pi pi-check"
+						onClick={handleUpdate}
+						disabled={!editItemId || editAmount <= 0}
+						severity={!editItemId || editAmount <= 0 ? 'secondary' : 'warning'}
+						style={{ width: 'unset' }}
+					/>
 				</div>
 			</Dialog>
 		</div>

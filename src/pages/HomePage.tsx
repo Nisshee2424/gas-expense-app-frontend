@@ -3,7 +3,6 @@ import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Calendar } from 'primereact/calendar';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -14,6 +13,7 @@ import { Toast } from 'primereact/toast';
 import { createTransaction, deleteTransaction, getRecentTransactions, updateTransaction } from '../api/client';
 import type { Item, Transaction } from '../types';
 import { items } from '../constants/items';
+import { showSimpleNotification, showLoadingNotification } from '../utils/notifications';
 
 interface HomePageProps {
 	items: Item[];
@@ -38,8 +38,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 	const [editAmount, setEditAmount] = useState<number>(0);
 
 	// 中央通知用
-	const [notification, setNotification] = useState<string | null>(null);
-
 	const toast = useRef<Toast>(null);
 	const hasFetched = useRef(false);
 
@@ -62,10 +60,9 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 		}
 	};
 
-	// 中央通知を表示
-	const showNotification = (message: string) => {
-		setNotification(message);
-		setTimeout(() => setNotification(null), 2000);
+	// 通知を表示
+	const showNotification = (message: string, type?: 'success' | 'error' | 'info' | 'warn') => {
+		showSimpleNotification({ message, type });
 	};
 
 	// 新規登録の入力が完了しているか
@@ -98,14 +95,16 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 		setNote('');
 		setAmounts([0]);
 
-		showNotification('登録中...');
+		const loadingNotification = showLoadingNotification('登録中...');
 		setLoading(true);
 		try {
 			await createTransaction(submitData);
-			showNotification('登録しました！');
-			fetchRecent();
+			showNotification('登録しました！', 'success');
+			loadingNotification.close();
+			await fetchRecent();
 		} catch (e: any) {
-			showNotification(`エラー: ${e.message}`);
+			loadingNotification.close();
+			showNotification(`エラー: ${e.message}`, 'error');
 		} finally {
 			setLoading(false);
 		}
@@ -127,8 +126,8 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 
 		// 先にモーダルを閉じる
 		setEditDialogVisible(false);
-		showNotification('更新中...');
 		setLoading(true);
+		const loadingNotification = showLoadingNotification('更新中...');
 		try {
 			await updateTransaction(editingTransaction.id, {
 				year: editDate.getFullYear(),
@@ -138,10 +137,12 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 				note: editNote,
 				amount: editAmount
 			});
-			showNotification('更新しました！');
-			fetchRecent();
+			loadingNotification.close();
+			showNotification('更新しました！', 'success');
+			await fetchRecent();
 		} catch (e: any) {
-			showNotification(`エラー: ${e.message}`);
+			loadingNotification.close();
+			showNotification(`エラー: ${e.message}`, 'error');
 		} finally {
 			setLoading(false);
 		}
@@ -155,14 +156,21 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 		confirmDialog({
 			message: '本当に削除しますか？',
 			header: '削除確認',
+			icon: 'pi pi-exclamation-triangle',
+			acceptClassName: 'p-button-danger',
 			accept: async () => {
-				showNotification('削除中...');
+				setLoading(true);
+				const loadingNotification = showLoadingNotification('削除中...');
 				try {
 					await deleteTransaction(editingTransaction.id);
-					showNotification('削除しました！');
-					fetchRecent();
+					loadingNotification.close();
+					showNotification('削除しました！', 'success');
+					await fetchRecent();
 				} catch (e: any) {
-					showNotification(`エラー: ${e.message}`);
+					loadingNotification.close();
+					showNotification(`エラー: ${e.message}`, 'error');
+				} finally {
+					setLoading(false);
 				}
 			}
 		});
@@ -179,13 +187,6 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 		<div className="grid">
 			<Toast ref={toast} />
 			<ConfirmDialog />
-
-			{/* 中央通知オーバーレイ */}
-			{notification && (
-				<div className="custom-notification-overlay">
-					<div className="custom-notification">{notification}</div>
-				</div>
-			)}
 
 			{/* 新規登録フォーム */}
 			<div className="col-12 md:col-6">
@@ -294,10 +295,13 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 
 			{/* 編集モーダル */}
 			<Dialog
-				header="明細編集"
+				header="明細を編集"
 				visible={editDialogVisible}
 				onHide={() => setEditDialogVisible(false)}
 				style={{ width: '90vw', maxWidth: '500px' }}
+				dismissableMask={true}
+				modal
+				draggable={false}
 			>
 				<div className="field mt-3">
 					<label className="block mb-2">日付</label>
@@ -306,13 +310,19 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 
 				<div className="field">
 					<label>金額</label>
-					<InputNumber
-						value={editAmount}
-						onValueChange={(e) => setEditAmount(e.value || 0)}
+					<InputText
+						value={editAmount ? editAmount.toString() : ''}
+						onChange={(e) => {
+							const value = e.target.value;
+							// 数字のみ許可（空文字列は許可）
+							if (value === '' || /^[0-9]+$/.test(value)) {
+								setEditAmount(value === '' ? 0 : parseInt(value, 10));
+							}
+						}}
 						placeholder="金額"
 						className="w-full"
-						useGrouping={true}
-						inputMode="decimal"
+						type="text"
+						inputMode="numeric"
 						pattern="[0-9]*"
 					/>
 				</div>
@@ -341,8 +351,21 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 				</div>
 
 				<div className="flex justify-content-between mt-4">
-					<Button label="削除" icon="pi pi-trash" severity="danger" onClick={handleDeleteFromModal} />
-					<Button label="更新" icon="pi pi-check" severity="warning" onClick={handleUpdate} loading={loading} />
+					<Button
+						label="削除"
+						icon="pi pi-trash"
+						severity="danger"
+						onClick={handleDeleteFromModal}
+						className="p-button-danger"
+					/>
+					<Button
+						label="更新"
+						icon="pi pi-check"
+						onClick={handleUpdate}
+						disabled={!editItemId || editAmount <= 0}
+						severity={!editItemId || editAmount <= 0 ? 'secondary' : 'warning'}
+						loading={loading}
+					/>
 				</div>
 			</Dialog>
 		</div>

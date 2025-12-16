@@ -152,6 +152,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					}}
 					tooltip="再読み込み"
 					className="p-button-text"
+					disabled={loading}
 				/>
 				<Button
 					label=""
