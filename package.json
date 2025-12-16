@@ -1,5 +1,5 @@
 {
-  "name": "家計簿アプリ",
+  "name": "client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -36,6 +36,7 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vite-plugin-html": "^3.2.2"
   }
 }
