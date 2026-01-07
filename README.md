@@ -1,73 +1,80 @@
-# React + TypeScript + Vite
+# GAS Expense App Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Google Apps Script (GAS) バックエンドと連携して動作する、React ベースの家計簿アプリケーションのフロントエンドです。
+モダンな UI と直感的な操作性を提供し、個人の収支管理をサポートします。
 
-Currently, two official plugins are available:
+## 🚀 技術スタック
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **フレームワーク**: React 19 (Vite)
+- **言語**: TypeScript
+- **UI コンポーネント**: PrimeReact
+- **スタリング**: Vanilla CSS + PrimeFlex
+- **認証**: Google OAuth 2.0 (@react-oauth/google)
+- **HTTP クライアント**: Axios
+- **パッケージ管理**: pnpm
 
-## React Compiler
+## ✨ 主な機能
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **月次収支一覧**: 月ごとの収支データを一覧表示・管理
+- **グラフィカルな集計**: 費目別の支出割合や推移を可視化
+- **固定費コピー**: 前月の固定費設定をワンクリックで当月に反映
+- **レスポンシブデザイン**: スマートフォンとPCの両方で快適に利用可能
+- **PWA 対応**: オフラインでの閲覧やホーム画面への追加が可能
 
-## Expanding the ESLint configuration
+## 🛠 セットアップ
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. 依存関係のインストール
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. 環境変数の設定
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+プロジェクトのルートディレクトリに `.env` ファイルを作成し、以下の値を設定してください。
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+VITE_GAS_API_URL=あなたのGASウェブアプリURL
+VITE_GOOGLE_CLIENT_ID=あなたのGoogleクライアントID
+VITE_API_KEY=バックエンドで設定したAPI_KEY
 ```
+
+### 3. 開発サーバーの起動
+
+```bash
+pnpm run dev
+```
+
+## 🚀 コマンド
+
+| コマンド | 説明 |
+| :--- | :--- |
+| `pnpm run dev` | ローカル開発サーバーを起動します |
+| `pnpm run build` | 本番用のアセットをビルド（`dist/` 出力）します |
+| `pnpm run deploy` | ビルド後、GitHub Pages へデプロイします |
+| `pnpm run lint` | ESLint による静的解析を実行します |
+
+## 🌐 デプロイ
+
+このプロジェクトは GitHub Pages を利用してホスティングされています。
+以下のコマンドを実行するだけで、ビルドから公開まで自動で行われます。
+
+```bash
+pnpm run deploy
+```
+
+## 📁 ディレクトリ構造
+
+```text
+src/
+├── components/  # 共通コンポーネント
+├── contexts/    # React Context (認証など)
+├── hooks/       # カスタムフック
+├── pages/       # 各画面のコンポーネント (Home, Monthly, etc.)
+├── services/    # API 通信ロジック
+├── types/       # TypeScript 型定義
+└── utils/       # ユーティリティ関数
+```
+
+---
+Developed by Nisshee2424
