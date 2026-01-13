@@ -209,7 +209,7 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 							<Button label="今日" size="small" outlined onClick={() => handleDateShortcut(0)} className="flex-shrink-0" />
 							<Button label="昨日" size="small" outlined onClick={() => handleDateShortcut(1)} className="flex-shrink-0" />
 							<Button label="一昨日" size="small" outlined onClick={() => handleDateShortcut(2)} className="flex-shrink-0" />
-							<Button label="3日前" size="small" outlined onClick={() => handleDateShortcut(3)} className="flex-shrink-0" />
+							{/* <Button label="3日前" size="small" outlined onClick={() => handleDateShortcut(3)} className="flex-shrink-0" /> */}
 						</div>
 						<Calendar
 							value={date}
