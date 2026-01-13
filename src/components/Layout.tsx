@@ -69,8 +69,20 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
 
 			{/* Sidebar Menu */}
 			<Sidebar visible={visible} onHide={() => setVisible(false)}>
-				<h2>メニュー</h2>
-				<Menu model={items} className="w-full border-none" />
+				<div className="flex flex-column h-full">
+					<div className="flex-grow-1">
+						<h2 className="mb-4">メニュー</h2>
+						<Menu model={items} className="w-full border-none" />
+					</div>
+					<div className="mt-auto p-3 text-xs text-500 border-top-1 border-200">
+						Last Update: {new Date(__BUILD_TIME__).toLocaleString('ja-JP', {
+							month: '2-digit',
+							day: '2-digit',
+							hour: '2-digit',
+							minute: '2-digit'
+						})}
+					</div>
+				</div>
 			</Sidebar>
 
 			{/* Main Content - 中央寄せ */}
