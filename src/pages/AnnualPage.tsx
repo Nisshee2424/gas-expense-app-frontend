@@ -51,13 +51,14 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}));
 
 		// 楽観的UI更新
-		const newSummary = summaryData.map(item => {
-			if (item.item_id === rowData.item_id) {
-				return { ...item, budget: newValue };
-			}
-			return item;
-		});
-		setSummaryData(newSummary);
+		setSummaryData(prevSummary =>
+			prevSummary.map(item => {
+				if (item.item_id === rowData.item_id) {
+					return { ...item, budget: newValue };
+				}
+				return item;
+			})
+		);
 	};
 
 	const handleSave = async () => {
