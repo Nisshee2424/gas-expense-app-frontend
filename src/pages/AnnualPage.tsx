@@ -3,7 +3,6 @@ import { Card } from 'primereact/card';
 import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { ColumnGroup } from 'primereact/columngroup';
@@ -11,6 +10,7 @@ import { Row } from 'primereact/row';
 
 import { getAnnualSummary, saveBudget } from '../api/client';
 import type { AnnualSummaryItem } from '../types';
+import { InputText } from 'primereact/inputtext';
 
 interface AnnualPageProps {
 	token: string;
@@ -138,7 +138,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					view="year"
 					dateFormat="yy"
 					showIcon
-					inputStyle={{ color: '#333', width: '100px' }}
+					inputStyle={{ color: '#333', width: '4.5em' }}
 				/>
 				<Button
 					icon="pi pi-refresh"
@@ -151,7 +151,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					disabled={loading}
 				/>
 				<Button
-					label="保存"
+					label=""
 					icon="pi pi-save"
 					onClick={handleSave}
 					disabled={Object.keys(editedBudgets).length === 0 || isSaving}

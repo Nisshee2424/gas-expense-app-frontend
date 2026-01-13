@@ -48,7 +48,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
 	return (
 		<div className="layout-wrapper min-h-screen flex flex-column">
 			{/* Header / Navbar - 上部固定、100%幅 */}
-			<header className="flex align-items-center justify-content-between p-3 surface-card shadow-2" style={{ width: '100%' }}>
+			<header
+				className="fixed top-0 left-0 right-0 flex align-items-center justify-content-between p-3 surface-card shadow-2 z-5"
+				style={{ height: '60px' }}
+			>
 				<div className="flex align-items-center gap-2">
 					<Button icon="pi pi-bars" onClick={() => setVisible(true)} text aria-label="Menu" />
 					<h2 className="m-0 text-xl font-bold">家計簿アプリ</h2>
@@ -86,7 +89,15 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
 			</Sidebar>
 
 			{/* Main Content - 中央寄せ */}
-			<main className="flex-grow-1 p-3" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+			<main
+				className="flex-grow-1 pr-3 pb-3 pl-3"
+				style={{
+					paddingTop: '75px',
+					maxWidth: '1200px',
+					margin: '0 auto',
+					width: '100%'
+				}}
+			>
 				{children}
 			</main>
 		</div>

@@ -50,6 +50,58 @@ body {
   min-height: 100vh;
 }
 
+/* 通知用スタイル */
+.notification-overlay {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.notification {
+  background-color: rgba(0, 0, 0, 0.25);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 10px;
+  opacity: 0;
+  top: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  max-width: 80vw;
+  text-align: center;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notification.hide {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* .notification-success {
+  background-color: #22c55e;
+}
+
+.notification-error {
+  background-color: #ef4444;
+}
+
+.notification-info {
+  background-color: #3b82f6;
+}
+
+.notification-warn {
+  background-color: #f59e0b;
+} */
+
 /* 点滅アニメーション */
 @keyframes pulse-glow {
 
@@ -313,9 +365,9 @@ body {
 
 /* Dialog スタイル */
 .p-dialog-header {
-  background-color: var(--primary-lighter) !important;
+  /* background-color: var(--primary-lighter) !important;
   color: var(--text-color) !important;
-  border-bottom: 1px solid var(--border-color) !important;
+  border-bottom: 1px solid var(--border-color) !important; */
 }
 
 .p-dialog-content {
