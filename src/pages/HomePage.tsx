@@ -232,17 +232,28 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 					</div>
 
 					<div className="field">
-						<label>3. 費目</label>
-						<Dropdown
-							value={selectedItemId}
-							options={items}
-							optionLabel="name"
-							optionValue="id"
-							onChange={(e) => setSelectedItemId(e.value)}
-							placeholder={items.length === 0 ? "読み込み中..." : "費目を選択"}
-							className="w-full"
-							emptyMessage="利用可能な費目がありません"
-						/>
+						<label className="block mb-2 font-bold">3. 費目を選択</label>
+						<div className="flex flex-wrap gap-2">
+							{items.length === 0 ? (
+								<p className="text-muted">読み込み中...</p>
+							) : (
+								items.map((item) => (
+									<Button
+										key={item.id}
+										label={item.name}
+										type="button"
+										onClick={() => setSelectedItemId(item.id)}
+										className={selectedItemId === item.id ? 'category-btn-selected' : 'category-btn-normal'}
+										style={{
+											flex: '1 1 calc(33.33% - 0.5rem)',
+											minWidth: '80px',
+											padding: '0.5rem',
+											fontSize: '0.9rem'
+										}}
+									/>
+								))
+							)}
+						</div>
 					</div>
 
 					<div className="field">
@@ -271,20 +282,20 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 			<div className="col-12 md:col-6">
 				<Card title="直近の明細">
 					<DataTable
-                        value={recentTransactions}
-                        loading={loading}
-                        size="small"
-                        stripedRows
-                        emptyMessage="明細データがありません"
-                        selectionMode="single"
-                        onRowClick={(e) => {
-                            const transaction = e.data as Transaction;
-                            if (transaction) {
-                                openEditDialog(transaction);
-                            }
-                        }}
-                        rowClassName={() => "cursor-pointer hover:surface-100"}
-                    >
+						value={recentTransactions}
+						loading={loading}
+						size="small"
+						stripedRows
+						emptyMessage="明細データがありません"
+						selectionMode="single"
+						onRowClick={(e) => {
+							const transaction = e.data as Transaction;
+							if (transaction) {
+								openEditDialog(transaction);
+							}
+						}}
+						rowClassName={() => "cursor-pointer hover:surface-100"}
+					>
 						<Column field="date" header="日付" body={(rowData) => `${rowData.month}/${rowData.day} (${getDayLabel(new Date(rowData.year, rowData.month - 1, rowData.day))})`} />
 						<Column field="item_id" header="費目" body={(rowData) => getItemName(rowData.item_id)} />
 						<Column field="note" header="品目" />
