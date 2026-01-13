@@ -21,11 +21,16 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 	const [summaryData, setSummaryData] = useState<AnnualSummaryItem[]>([]);
 	const [loading, setLoading] = useState(false);
 	const toast = useRef<Toast>(null);
+	const saveTimeoutRef = useRef<Record<number, any>>({});
 
 	useEffect(() => {
 		if (token && date) {
 			fetchAnnual();
 		}
+		// アンマウント時にタイマーをクリア
+		return () => {
+			Object.values(saveTimeoutRef.current).forEach(clearTimeout);
+		};
 	}, [token, date]);
 
 	const fetchAnnual = async () => {
@@ -41,25 +46,33 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}
 	};
 
-	const onBudgetChange = useCallback(async (rowData: AnnualSummaryItem, newValue: number) => {
+	const onBudgetChange = useCallback((rowData: AnnualSummaryItem, newValue: number) => {
 		// 1. ローカルステートを即座に更新してUIに反映 (チラつき防止)
 		setSummaryData(prev => prev.map(item =>
 			item.item_id === rowData.item_id ? { ...item, budget: newValue } : item
 		));
 
-		// 2. 裏側で保存を実行 (await しないことで入力をブロックしない)
-		try {
-			const year = date.getFullYear();
-			await saveBudget(year, rowData.item_id, newValue);
-		} catch (e) {
-			console.error('Failed to auto-save budget:', e);
-			toast.current?.show({
-				severity: 'error',
-				summary: '保存失敗',
-				detail: `${rowData.item_name}の予算保存に失敗しました`,
-				life: 3000
-			});
+		// 2. 既存のタイマーがあればキャンセル
+		if (saveTimeoutRef.current[rowData.item_id]) {
+			clearTimeout(saveTimeoutRef.current[rowData.item_id]);
 		}
+
+		// 3. Debounce 保存 (500ms 待ってから API 呼び出し)
+		saveTimeoutRef.current[rowData.item_id] = setTimeout(async () => {
+			try {
+				const year = date.getFullYear();
+				await saveBudget(year, rowData.item_id, newValue);
+				// 保存成功時は通知をあえて出さない（シームレスにするため）
+			} catch (e) {
+				console.error('Failed to auto-save budget:', e);
+				toast.current?.show({
+					severity: 'error',
+					summary: '保存失敗',
+					detail: `${rowData.item_name}の予算保存に失敗しました`,
+					life: 3000
+				});
+			}
+		}, 500);
 	}, [date]);
 
 	const budgetEditor = useCallback((rowData: AnnualSummaryItem) => {
@@ -77,7 +90,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				className="w-full"
 				inputMode="numeric"
 				pattern="[0-9]*"
-				style={{ width: '100px', textAlign: 'left' }}
+				style={{ minWidth: '130px', textAlign: 'left' }}
 			/>
 		);
 	}, [onBudgetChange]);
@@ -130,10 +143,13 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				loading={loading}
 				footerColumnGroup={footerGroup}
 				dataKey="item_id"
+				scrollable
+				scrollHeight="flex"
 			>
 				<Column
 					field="item_name"
 					header="費目"
+					body={(rowData) => <span className="ellipsis-text">{rowData.item_name}</span>}
 					bodyStyle={{ textAlign: 'left' }}
 					headerStyle={{ textAlign: 'left' }}
 				/>
