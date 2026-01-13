@@ -84,7 +84,6 @@ function App() {
       </div>
     );
   }
-
   // ログイン済み
   return (
     <Layout
@@ -100,9 +99,22 @@ function App() {
       )}
       {error && <div className="p-3 bg-red-100 text-red-700 border-round mb-3">{error}</div>}
 
-      {!loading && activePage === 'home' && <HomePage items={items} token={token} />}
-      {!loading && activePage === 'monthly' && <MonthlyPage token={token} />}
-      {!loading && activePage === 'annual' && <AnnualPage token={token} />}
+      {!loading && activePage === 'home' && (
+        <HomePage
+          items={items}
+          token={token}
+        />
+      )}
+      {!loading && activePage === 'monthly' && (
+        <MonthlyPage
+          token={token}
+        />
+      )}
+      {!loading && activePage === 'annual' && (
+        <AnnualPage
+          token={token}
+        />
+      )}
     </Layout>
   );
 }

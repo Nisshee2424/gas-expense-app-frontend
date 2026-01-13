@@ -90,7 +90,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				className="w-full"
 				inputMode="numeric"
 				pattern="[0-9]*"
-				style={{ minWidth: '130px', textAlign: 'left' }}
+				style={{ minWidth: '6em', textAlign: 'left' }}
 			/>
 		);
 	}, [onBudgetChange]);
@@ -103,7 +103,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 	const footerGroup = (
 		<ColumnGroup>
 			<Row>
-				<Column footer="合計" colSpan={1} footerStyle={{ textAlign: 'right' }} />
+				<Column footer="合計" colSpan={1} footerStyle={{ textAlign: 'right', whiteSpace: 'nowrap' }} />
 				<Column footer={`¥${totalCurrent.toLocaleString()}`} align="left" />
 				<Column footer={`¥${totalBudget.toLocaleString()}`} align="left" />
 				<Column footer={`¥${totalPrev.toLocaleString()}`} align="left" />
@@ -149,7 +149,12 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				<Column
 					field="item_name"
 					header="費目"
-					body={(rowData) => <span className="ellipsis-text">{rowData.item_name}</span>}
+					body={(rowData) => (
+						<>
+							<span className="desktop-only">{rowData.item_name}</span>
+							<span className="mobile-only">{rowData.item_name.substring(0, 2)}</span>
+						</>
+					)}
 					bodyStyle={{ textAlign: 'left' }}
 					headerStyle={{ textAlign: 'left' }}
 				/>

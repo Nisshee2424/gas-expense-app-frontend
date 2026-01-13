@@ -14,6 +14,21 @@ import { createTransaction, deleteTransaction, getRecentTransactions, updateTran
 import type { Item, Transaction } from '../types';
 import { items } from '../constants/items';
 import { showSimpleNotification, showLoadingNotification } from '../utils/notifications';
+import { getDayLabel } from '../utils/dateUtils';
+import { addLocale, locale } from 'primereact/api';
+
+// PrimeReact の日本語ロケール設定
+addLocale('ja', {
+	firstDayOfWeek: 0,
+	dayNames: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+	dayNamesShort: ['日', '月', '火', '水', '木', '金', '土'],
+	dayNamesMin: ['日', '月', '火', '水', '木', '金', '土'],
+	monthNames: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+	monthNamesShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+	today: '今日',
+	clear: 'クリア'
+});
+locale('ja');
 
 interface HomePageProps {
 	items: Item[];
@@ -36,6 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 	const [editItemId, setEditItemId] = useState<number | null>(null);
 	const [editNote, setEditNote] = useState<string>('');
 	const [editAmount, setEditAmount] = useState<number>(0);
+
 
 	// 中央通知用
 	const toast = useRef<Toast>(null);
@@ -178,28 +194,31 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 
 	const getItemName = (id: number) => items.find(i => i.id === id)?.name || id;
 
-	const getDayLabel = (dateObj: Date) => {
-		const days = ['日', '月', '火', '水', '木', '金', '土'];
-		return days[dateObj.getDay()];
-	};
-
 	return (
 		<div className="grid">
 			<Toast ref={toast} />
 			<ConfirmDialog />
 
+
 			{/* 新規登録フォーム */}
 			<div className="col-12 md:col-6">
 				<Card title="新規登録">
 					<div className="field">
-						<label className="block mb-2">1. 日付: {date && date.toLocaleDateString()} ({getDayLabel(date)})</label>
+						<label className="block mb-2 font-bold">1. 日付</label>
 						<div className="flex flex-wrap gap-2 mb-2">
 							<Button label="今日" size="small" outlined onClick={() => handleDateShortcut(0)} className="flex-shrink-0" />
 							<Button label="昨日" size="small" outlined onClick={() => handleDateShortcut(1)} className="flex-shrink-0" />
 							<Button label="一昨日" size="small" outlined onClick={() => handleDateShortcut(2)} className="flex-shrink-0" />
-							{/* <Button label="3日前" size="small" outlined onClick={() => handleDateShortcut(3)} className="flex-shrink-0" /> */}
+							<Button label="3日前" size="small" outlined onClick={() => handleDateShortcut(3)} className="flex-shrink-0" />
 						</div>
-						<Calendar value={date} onChange={(e) => setDate(e.value as Date)} showIcon dateFormat="yy/mm/dd" />
+						<Calendar
+							value={date}
+							onChange={(e) => setDate(e.value as Date)}
+							showIcon
+							dateFormat="yy/mm/dd (D)"
+							className="w-full"
+							locale="ja"
+						/>
 					</div>
 
 					<div className="field">
@@ -296,9 +315,40 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 						}}
 						rowClassName={() => "cursor-pointer hover:surface-100"}
 					>
-						<Column field="date" header="日付" body={(rowData) => `${rowData.month}/${rowData.day} (${getDayLabel(new Date(rowData.year, rowData.month - 1, rowData.day))})`} />
-						<Column field="item_id" header="費目" body={(rowData) => getItemName(rowData.item_id)} />
-						<Column field="note" header="品目" />
+						<Column
+							field="date"
+							header="日付"
+							body={(rowData) => {
+								const d = new Date(rowData.year, rowData.month - 1, rowData.day);
+								return `${rowData.month}/${rowData.day} (${getDayLabel(d)})`;
+							}}
+						/>
+						<Column
+							field="item_id"
+							header="費目"
+							body={(rowData) => {
+								const name = String(getItemName(rowData.item_id));
+								return (
+									<>
+										<span className="desktop-only">{name}</span>
+										<span className="mobile-only">{name.substring(0, 2)}</span>
+									</>
+								);
+							}}
+						/>
+						<Column
+							field="note"
+							header="品目"
+							body={(rowData) => {
+								const n = rowData.note || '-';
+								return (
+									<>
+										<span className="desktop-only">{n}</span>
+										<span className="mobile-only">{n.length > 4 ? n.substring(0, 4) + '...' : n}</span>
+									</>
+								);
+							}}
+						/>
 						<Column field="amount" header="金額" body={(rowData) => `¥${Number(rowData.amount).toLocaleString()}`} />
 					</DataTable>
 				</Card>
