@@ -443,7 +443,21 @@ body {
   }
 }
 
+/* Display Control Helpers */
+@media screen and (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
 /* HomePage Category Buttons */
+
 .category-btn-selected {
   background-color: #ff8fa3 !important;
   /* 明るいピンク */

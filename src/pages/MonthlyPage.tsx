@@ -16,12 +16,8 @@ import { getMonthlyTransactions, updateTransaction, deleteTransaction } from '..
 import type { Transaction } from '../types';
 import { items } from '../constants/items';
 import { showSimpleNotification, showLoadingNotification } from '../utils/notifications';
+import { getDayLabel } from '../utils/dateUtils';
 
-// 曜日を日本語で返すヘルパー関数
-const getDayLabel = (date: Date) => {
-	const days = ['日', '月', '火', '水', '木', '金', '土'];
-	return days[date.getDay()];
-};
 
 interface MonthlyPageProps {
 	token: string;
@@ -245,7 +241,11 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 			<div className="col-12 md:col-6">
 				<Card title="費目別集計">
 					<DataTable value={categorySummary} loading={loading} footerColumnGroup={categoryFooter} size="small" stripedRows>
-						<Column field="item_name" header="費目" />
+						<Column
+							field="item_name"
+							header="費目"
+							body={(row) => row.item_name}
+						/>
 						<Column field="amount" header="金額" body={(row) => `¥${row.amount.toLocaleString()}`} />
 					</DataTable>
 				</Card>
@@ -270,8 +270,32 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 						}}
 						rowClassName={() => "cursor-pointer hover:surface-100"}
 					>
-						<Column field="item_id" header="費目" body={(row) => getItemName(row.item_id)} />
-						<Column field="note" header="品目" body={(row) => row.note || '-'} />
+						<Column
+							field="item_id"
+							header="費目"
+							body={(row) => {
+								const name = getItemName(row.item_id);
+								return (
+									<>
+										<span className="desktop-only">{name}</span>
+										<span className="mobile-only">{name.substring(0, 2)}</span>
+									</>
+								);
+							}}
+						/>
+						<Column
+							field="note"
+							header="品目"
+							body={(row) => {
+								const n = row.note || '-';
+								return (
+									<>
+										<span className="desktop-only">{n}</span>
+										<span className="mobile-only">{n.length > 4 ? n.substring(0, 4) + '...' : n}</span>
+									</>
+								);
+							}}
+						/>
 						<Column
 							field="amount"
 							header="金額"
@@ -302,8 +326,32 @@ export const MonthlyPage: React.FC<MonthlyPageProps> = ({ token }) => {
 						<Column field="date" header="日付" body={(rowData) =>
 							`${rowData.month}/${rowData.day} (${getDayLabel(new Date(Number(rowData.year), Number(rowData.month) - 1, Number(rowData.day)))})`
 						} />
-						<Column field="item_id" header="費目" body={(rowData) => getItemName(rowData.item_id)} />
-						<Column field="note" header="品目" />
+						<Column
+							field="item_id"
+							header="費目"
+							body={(rowData) => {
+								const name = getItemName(rowData.item_id);
+								return (
+									<>
+										<span className="desktop-only">{name}</span>
+										<span className="mobile-only">{name.substring(0, 2)}</span>
+									</>
+								);
+							}}
+						/>
+						<Column
+							field="note"
+							header="品目"
+							body={(rowData) => {
+								const n = rowData.note || '-';
+								return (
+									<>
+										<span className="desktop-only">{n}</span>
+										<span className="mobile-only">{n.length > 4 ? n.substring(0, 4) + '...' : n}</span>
+									</>
+								);
+							}}
+						/>
 						<Column field="amount" header="金額" body={(rowData) => `¥${Number(rowData.amount).toLocaleString()}`} />
 					</DataTable>
 				</Card>
