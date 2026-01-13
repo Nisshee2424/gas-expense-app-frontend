@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from 'primereact/card';
 import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
@@ -19,9 +19,7 @@ interface AnnualPageProps {
 export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 	const [date, setDate] = useState<Date>(new Date());
 	const [summaryData, setSummaryData] = useState<AnnualSummaryItem[]>([]);
-	const [editedBudgets, setEditedBudgets] = useState<Record<number, number>>({});
 	const [loading, setLoading] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
 	const toast = useRef<Toast>(null);
 
 	useEffect(() => {
@@ -36,21 +34,12 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 			const year = date.getFullYear();
 			const data = await getAnnualSummary(year);
 			setSummaryData(data || []);
-			setEditedBudgets({}); // データ読み込み時に編集状態をクリア
 		} catch (e) {
 			console.error(e);
 		} finally {
 			setLoading(false);
 		}
 	};
-
-	// Derived State: summaryData に editedBudgets をマージして表示用データを算出
-	const displayData = useMemo(() => {
-		return summaryData.map(item => ({
-			...item,
-			budget: editedBudgets[item.item_id] !== undefined ? editedBudgets[item.item_id] : item.budget
-		}));
-	}, [summaryData, editedBudgets]);
 
 	const onBudgetChange = useCallback(async (rowData: AnnualSummaryItem, newValue: number) => {
 		// 1. ローカルステートを即座に更新してUIに反映 (チラつき防止)
@@ -73,40 +62,6 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}
 	}, [date]);
 
-	const handleSave = async () => {
-		if (Object.keys(editedBudgets).length === 0) return;
-
-		setIsSaving(true);
-		try {
-			const year = date.getFullYear();
-			const savePromises = Object.entries(editedBudgets).map(([itemId, amount]) =>
-				saveBudget(year, Number(itemId), amount)
-			);
-
-			await Promise.all(savePromises);
-
-			toast.current?.show({
-				severity: 'success',
-				summary: '保存完了',
-				detail: '予算を更新しました',
-				life: 3000
-			});
-
-			// 保存成功後、最新データを再取得して編集状態をクリア
-			await fetchAnnual();
-		} catch (e) {
-			console.error('Failed to save budgets:', e);
-			toast.current?.show({
-				severity: 'error',
-				summary: 'エラー',
-				detail: '予算の保存中にエラーが発生しました',
-				life: 5000
-			});
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
 	const budgetEditor = useCallback((rowData: AnnualSummaryItem) => {
 		return (
 			<InputText
@@ -128,9 +83,9 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 	}, [onBudgetChange]);
 
 	// 合計行計算
-	const totalCurrent = displayData.reduce((sum, item) => sum + item.current_amount, 0);
-	const totalPrev = displayData.reduce((sum, item) => sum + item.prev_amount, 0);
-	const totalBudget = displayData.reduce((sum, item) => sum + item.budget, 0);
+	const totalCurrent = summaryData.reduce((sum, item) => sum + item.current_amount, 0);
+	const totalPrev = summaryData.reduce((sum, item) => sum + item.prev_amount, 0);
+	const totalBudget = summaryData.reduce((sum, item) => sum + item.budget, 0);
 
 	const footerGroup = (
 		<ColumnGroup>
@@ -171,7 +126,7 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 			</div>
 
 			<DataTable
-				value={displayData}
+				value={summaryData}
 				loading={loading}
 				footerColumnGroup={footerGroup}
 				dataKey="item_id"
