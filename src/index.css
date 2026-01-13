@@ -364,12 +364,6 @@ body {
 }
 
 /* Dialog スタイル */
-.p-dialog-header {
-  /* background-color: var(--primary-lighter) !important;
-  color: var(--text-color) !important;
-  border-bottom: 1px solid var(--border-color) !important; */
-}
-
 .p-dialog-content {
   background-color: var(--card-bg) !important;
 }
@@ -434,5 +428,17 @@ body {
   100% {
     opacity: 0;
     transform: scale(0.9);
+  }
+}
+
+/* AnnualPage Mobile Improvements */
+@media screen and (max-width: 768px) {
+  .ellipsis-text {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
   }
 }
