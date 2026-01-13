@@ -232,17 +232,26 @@ export const HomePage: React.FC<HomePageProps> = ({ token }) => {
 					</div>
 
 					<div className="field">
-						<label>3. 費目</label>
-						<Dropdown
-							value={selectedItemId}
-							options={items}
-							optionLabel="name"
-							optionValue="id"
-							onChange={(e) => setSelectedItemId(e.value)}
-							placeholder={items.length === 0 ? "読み込み中..." : "費目を選択"}
-							className="w-full"
-							emptyMessage="利用可能な費目がありません"
-						/>
+						<label className="block mb-2">3. 費目</label>
+						<div className="flex flex-wrap gap-2">
+							{items.length === 0 ? (
+								<p className="text-muted">読み込み中...</p>
+							) : (
+								items.map((item) => (
+									<Button
+										key={item.id}
+										label={item.name}
+										type="button"
+										size="small"
+										severity={selectedItemId === item.id ? 'info' : 'secondary'}
+										outlined={selectedItemId !== item.id}
+										onClick={() => setSelectedItemId(item.id)}
+										className="flex-grow-1 md:flex-grow-0"
+										style={{ minWidth: '80px' }}
+									/>
+								))
+							)}
+						</div>
 					</div>
 
 					<div className="field">

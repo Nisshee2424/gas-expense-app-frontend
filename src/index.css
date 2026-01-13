@@ -442,3 +442,24 @@ body {
     vertical-align: middle;
   }
 }
+
+/* HomePage Category Buttons */
+.category-btn-selected {
+  background-color: #ff8fa3 !important;
+  /* 明るいピンク */
+  border-color: #ff8fa3 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(255, 143, 163, 0.4) !important;
+  font-weight: bold !important;
+}
+
+.category-btn-normal {
+  background-color: var(--primary-lighter) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+.category-btn-normal:hover {
+  background-color: var(--primary-light) !important;
+  border-color: var(--primary-light) !important;
+}
