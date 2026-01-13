@@ -52,13 +52,13 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}));
 	}, [summaryData, editedBudgets]);
 
-	const onBudgetChange = (rowData: AnnualSummaryItem, newValue: number) => {
+	const onBudgetChange = React.useCallback((rowData: AnnualSummaryItem, newValue: number) => {
 		// 編集された予算のみを記録。summaryData は直接変更しない。
 		setEditedBudgets(prev => ({
 			...prev,
 			[rowData.item_id]: newValue
 		}));
-	};
+	}, []);
 
 	const handleSave = async () => {
 		if (Object.keys(editedBudgets).length === 0) return;
@@ -94,21 +94,20 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}
 	};
 
-	const budgetEditor = (rowData: AnnualSummaryItem) => {
+	const budgetEditor = React.useCallback((rowData: AnnualSummaryItem) => {
 		return (
 			<InputNumber
-				value={rowData.budget ?? 0}
-				onValueChange={(e) => onBudgetChange(rowData, e.value ?? 0)}
-				mode="decimal"
-				minFractionDigits={0}
-				maxFractionDigits={0}
-				useGrouping={false}
+				value={rowData.budget}
+				onValueChange={(e) => onBudgetChange(rowData, e.value || 0)}
+				placeholder="予算"
+				className="w-full"
+				useGrouping={true}
 				inputStyle={{ width: '100px', textAlign: 'left' }}
 				inputMode="decimal"
-				min={0}
+				pattern="[0-9]*"
 			/>
 		);
-	};
+	}, [onBudgetChange]);
 
 	// 合計行計算
 	const totalCurrent = displayData.reduce((sum, item) => sum + item.current_amount, 0);
