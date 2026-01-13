@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card } from 'primereact/card';
 import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { ColumnGroup } from 'primereact/columngroup';
@@ -10,7 +11,6 @@ import { Row } from 'primereact/row';
 
 import { getAnnualSummary, saveBudget } from '../api/client';
 import type { AnnualSummaryItem } from '../types';
-import { InputText } from 'primereact/inputtext';
 
 interface AnnualPageProps {
 	token: string;
@@ -35,7 +35,8 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		try {
 			const year = date.getFullYear();
 			const data = await getAnnualSummary(year);
-			setSummaryData(data);
+			setSummaryData(data || []);
+			setEditedBudgets({}); // データ読み込み時に編集状態をクリア
 		} catch (e) {
 			console.error(e);
 		} finally {
@@ -43,22 +44,21 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}
 	};
 
-	const onBudgetChange = (rowData: AnnualSummaryItem, newValue: number) => {
-		// 編集された予算を記録
+	// Derived State: summaryData に editedBudgets をマージして表示用データを算出
+	const displayData = useMemo(() => {
+		return summaryData.map(item => ({
+			...item,
+			budget: editedBudgets[item.item_id] !== undefined ? editedBudgets[item.item_id] : item.budget
+		}));
+	}, [summaryData, editedBudgets]);
+
+	const onBudgetChange = useCallback((rowData: AnnualSummaryItem, newValue: number) => {
+		// 編集された予算のみを記録。summaryData は直接変更しない。
 		setEditedBudgets(prev => ({
 			...prev,
 			[rowData.item_id]: newValue
 		}));
-
-		// 楽観的UI更新
-		const newSummary = summaryData.map(item => {
-			if (item.item_id === rowData.item_id) {
-				return { ...item, budget: newValue };
-			}
-			return item;
-		});
-		setSummaryData(newSummary);
-	};
+	}, []);
 
 	const handleSave = async () => {
 		if (Object.keys(editedBudgets).length === 0) return;
@@ -78,7 +78,9 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				detail: '予算を更新しました',
 				life: 3000
 			});
-			setEditedBudgets({}); // 編集状態をクリア
+
+			// 保存成功後、最新データを再取得して編集状態をクリア
+			await fetchAnnual();
 		} catch (e) {
 			console.error('Failed to save budgets:', e);
 			toast.current?.show({
@@ -92,29 +94,25 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}
 	};
 
-	const budgetEditor = (rowData: AnnualSummaryItem) => {
+	const budgetEditor = useCallback((rowData: AnnualSummaryItem) => {
 		return (
-			<InputText
-				value={rowData.budget ? rowData.budget.toString() : ''}
-				onChange={(e) => {
-					const value = e.target.value;
-					// 数字のみ許可（空文字列は許可）
-					if (value === '' || /^[0-9]+$/.test(value)) {
-						onBudgetChange(rowData, value === '' ? 0 : parseInt(value, 10));
-					}
-				}}
-				style={{ width: '100px', textAlign: 'left' }}
-				type="text"
-				inputMode="numeric"
+			<InputNumber
+				value={rowData.budget}
+				onValueChange={(e) => onBudgetChange(rowData, e.value || 0)}
+				placeholder="予算"
+				className="w-full"
+				useGrouping={true}
+				inputStyle={{ width: '100px', textAlign: 'left' }}
+				inputMode="decimal"
 				pattern="[0-9]*"
 			/>
 		);
-	};
+	}, [onBudgetChange]);
 
 	// 合計行計算
-	const totalCurrent = summaryData.reduce((sum, item) => sum + item.current_amount, 0);
-	const totalPrev = summaryData.reduce((sum, item) => sum + item.prev_amount, 0);
-	const totalBudget = summaryData.reduce((sum, item) => sum + item.budget, 0);
+	const totalCurrent = displayData.reduce((sum, item) => sum + item.current_amount, 0);
+	const totalPrev = displayData.reduce((sum, item) => sum + item.prev_amount, 0);
+	const totalBudget = displayData.reduce((sum, item) => sum + item.budget, 0);
 
 	const footerGroup = (
 		<ColumnGroup>
@@ -136,26 +134,24 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					value={date}
 					onChange={(e) => {
 						setDate(e.value as Date);
-						setEditedBudgets({}); // 年を変更したら編集状態をリセット
 					}}
 					view="year"
 					dateFormat="yy"
 					showIcon
-					inputStyle={{ color: '#333', width: '4.5em' }}
+					inputStyle={{ color: '#333', width: '100px' }}
 				/>
 				<Button
 					icon="pi pi-refresh"
 					rounded
 					onClick={() => {
 						fetchAnnual();
-						setEditedBudgets({}); // 再読み込み時に編集状態をリセット
 					}}
 					tooltip="再読み込み"
 					className="p-button-text"
 					disabled={loading}
 				/>
 				<Button
-					label=""
+					label="保存"
 					icon="pi pi-save"
 					onClick={handleSave}
 					disabled={Object.keys(editedBudgets).length === 0 || isSaving}
@@ -164,7 +160,12 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 				/>
 			</div>
 
-			<DataTable value={summaryData} loading={loading} footerColumnGroup={footerGroup}>
+			<DataTable
+				value={displayData}
+				loading={loading}
+				footerColumnGroup={footerGroup}
+				dataKey="item_id"
+			>
 				<Column
 					field="item_name"
 					header="費目"
