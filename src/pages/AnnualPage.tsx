@@ -3,7 +3,7 @@ import { Card } from 'primereact/card';
 import { Calendar } from 'primereact/calendar';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { InputNumber } from 'primereact/inputnumber';
+import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { ColumnGroup } from 'primereact/columngroup';
@@ -52,13 +52,26 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 		}));
 	}, [summaryData, editedBudgets]);
 
-	const onBudgetChange = useCallback((rowData: AnnualSummaryItem, newValue: number) => {
-		// 編集された予算のみを記録。summaryData は直接変更しない。
-		setEditedBudgets(prev => ({
-			...prev,
-			[rowData.item_id]: newValue
-		}));
-	}, []);
+	const onBudgetChange = useCallback(async (rowData: AnnualSummaryItem, newValue: number) => {
+		// 1. ローカルステートを即座に更新してUIに反映 (チラつき防止)
+		setSummaryData(prev => prev.map(item =>
+			item.item_id === rowData.item_id ? { ...item, budget: newValue } : item
+		));
+
+		// 2. 裏側で保存を実行 (await しないことで入力をブロックしない)
+		try {
+			const year = date.getFullYear();
+			await saveBudget(year, rowData.item_id, newValue);
+		} catch (e) {
+			console.error('Failed to auto-save budget:', e);
+			toast.current?.show({
+				severity: 'error',
+				summary: '保存失敗',
+				detail: `${rowData.item_name}の予算保存に失敗しました`,
+				life: 3000
+			});
+		}
+	}, [date]);
 
 	const handleSave = async () => {
 		if (Object.keys(editedBudgets).length === 0) return;
@@ -96,15 +109,20 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 
 	const budgetEditor = useCallback((rowData: AnnualSummaryItem) => {
 		return (
-			<InputNumber
-				value={rowData.budget}
-				onValueChange={(e) => onBudgetChange(rowData, e.value || 0)}
+			<InputText
+				value={rowData.budget === 0 ? '' : rowData.budget.toString()}
+				onChange={(e) => {
+					const val = e.target.value;
+					if (val === '' || /^[0-9]+$/.test(val)) {
+						const numVal = val === '' ? 0 : parseInt(val, 10);
+						onBudgetChange(rowData, numVal);
+					}
+				}}
 				placeholder="予算"
 				className="w-full"
-				useGrouping={true}
-				inputStyle={{ width: '100px', textAlign: 'left' }}
-				inputMode="decimal"
+				inputMode="numeric"
 				pattern="[0-9]*"
+				style={{ width: '100px', textAlign: 'left' }}
 			/>
 		);
 	}, [onBudgetChange]);
@@ -149,14 +167,6 @@ export const AnnualPage: React.FC<AnnualPageProps> = ({ token }) => {
 					tooltip="再読み込み"
 					className="p-button-text"
 					disabled={loading}
-				/>
-				<Button
-					label="保存"
-					icon="pi pi-save"
-					onClick={handleSave}
-					disabled={Object.keys(editedBudgets).length === 0 || isSaving}
-					loading={isSaving}
-					className="p-button-warning"
 				/>
 			</div>
 
